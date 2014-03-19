@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html>
+  <head>
+	  <link href='http://fonts.googleapis.com/css?family=Alegreya+Sans+SC|Quicksand:400,700|Josefin+Sans|Raleway:400,300' rel='stylesheet' type='text/css'>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no"/>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css" rel="stylesheet">
+	<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="zipcodes.css"> </style>
+    <!-- Google Analytics -->
+</head>
+
+<body>
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-47879752-1', 'mit.edu');
+      ga('send', 'pageview');
+
+    </script>
+    
+    <script type="text/javascript">
+
+    var nycZoom = 0.85;
+    var worldZoom = .85;
+    var mapCenter = [-71.123625,42.372115];
+    var svg1;
+    var svg2;
+    var g;
+    var projection = d3.geo.mercator();
+    var path = d3.geo.path().projection(projection); 
+    var nycJSON;
+    var worldJSON;
+    var zip_to_country;
+    var marked_countries = [];
+    var zip_region_counts;
+	var lightBoxShown = false;
+	function bindHandlers(){
+		$('#data-source').click(function(){
+		    lightBoxShown = true;
+		    $('#data-lightbox').animate({
+		        'opacity':1.0}, 1500
+		    );
+		   });
+
+		  $('#svgContainer1').click(function(){
+		      closeLightBox();
+		  });
+		  $('#svgContainer2').click(function(){
+		      closeLightBox();
+		  });
+		  $('#lightbox-close').click(function(){
+		    closeLightBox();
+		});
+	}
+	
+	function closeLightBox(){
+	  if (lightBoxShown){
+	      $('#data-lightbox').animate({
+	        'opacity':0.0}, 'fast'
+	      );
+
+	      $('#mapSVG').animate({'opacity':1.0},'slow');
+	      lightBoxShown = false;
+	    };
+	}
+	
+    $(window).load(function(){
+
+		bindHandlers();
+
+        $.getJSON('ny_zip_regions.geojson', function(geojson){
+            nycJSON = geojson;
+            setProjection1();
+            drawNYC();
+            //initialize();
+            initializeController();
+
+            $.getJSON('world_filtered.geojson', function(geojson){
+              worldJSON = geojson;
+              setProjection2();
+              drawWorld();
+
+              $.getJSON('manhattan_byzip.json', function(data){
+                zip_to_country = data;
+
+                $.getJSON('zip_region_counts.json', function(data){
+                  zip_region_counts = data;
+				  
+                  	$.getJSON('region_zip_counts.json', function(data){
+                  	  region_zip_counts = data;
+
+                  });
+                });
+              });
+            });
+            
+        });
+
+    function setProjection1(){ 
+      projection.scale(1)
+      .translate([0, 0]);
+      width = $("#svgContainer1").width(); height = $("#svgContainer1").height();
+      console.log(width,height);
+      var b = path.bounds(nycJSON),
+      s = nycZoom / Math.max((b[1][0] - b[0][0]) / width, (b[1][1] - b[0][1]) / height),
+      t = [(width - s * (b[1][0] + b[0][0])) / 2, (height - s * (b[1][1] + b[0][1])) / 2];
+      projection.scale(s).translate(t);
+      projection(mapCenter);
+    }
+
+    function setProjection2(){ 
+      projection.scale(1)
+      .translate([0, 0]);
+      width = $("#svgContainer2").width(); height = $("#svgContainer2").height();
+      console.log(width,height);
+      var b = path.bounds(worldJSON),
+      s = worldZoom / Math.max((b[1][0] - b[0][0]) / width, (b[1][1] - b[0][1]) / height),
+      t = [(width - s * (b[1][0] + b[0][0])) / 2, (height - s * (b[1][1] + b[0][1])) / 2];
+      projection.scale(s).translate(t);
+      projection(mapCenter);
+    }
+
+    function getColor(value){
+      var color = d3.scale.linear().domain([0, 1]).range(["rgb(255,255,0)", "rgb(255,0,0)"]);
+      return color(value);
+    }
+
+    function drawNYC(){
+
+      var numCompanies = function(d) { return d.properties.numCompanies; };
+
+      var colorScale = d3.scale.sqrt().domain([0, d3.max(nycJSON.features, numCompanies)]).range(["#ffeeee", "#ff2222"]); 
+
+      svg1 = d3.select("#svgContainer1").append("svg")
+            .attr('height',$('#svgContainer1').height())
+            .attr('width', $('#svgContainer1').width());
+
+
+      var map1 = svg1.selectAll(".map1")
+      .data(nycJSON.features)
+      .enter().append("path")
+      .attr("d", path)
+      .attr("class", "map1")
+      .attr("id", function(d){ 
+        id = "nyregion_" + d.properties.ZCTA.toString();
+        return id;})
+      .attr("stroke-opacity", 0)
+      .attr("stroke", function(d){
+        return colorScale(numCompanies(d));})
+      .attr("fill-opacity", 1)
+      .attr("fill", function(d){
+        return colorScale(numCompanies(d));})
+      .attr("cursor", "pointer");
+    }
+
+    function drawWorld(){
+
+      svg2 = d3.select("#svgContainer2").append("svg")
+            .attr('height',$('#svgContainer2').height())
+            .attr('width', $('#svgContainer2').width());
+
+
+      svg2.selectAll("path")
+      .data(worldJSON.features)
+      .enter().append("path")
+      .attr("d", path)
+      .attr("class","unmarked")
+      .attr("id", function(d){
+        var id = d.properties.name;
+        if (id != undefined){
+          id = id.toUpperCase();
+        }
+        return id.split(" ").join("_");
+      })
+      .attr("stroke-opacity", 0)
+      .attr("stroke", "#fff")
+      .attr("fill", "#ddd")
+      .attr("fill-opacity", 1)
+      .on('mouseover', function(d){
+		  console.log("over")
+		  d3.select(this).attr("stroke", "#fff").attr("stroke-opacity", .6).attr("stroke-width", 3)
+        $("#countryName").html(d.properties.name);
+		//$("#countryName").html("test");
+        //$("#countryName").style("opacity",1.0);
+        //$("#countryName").offset({top:d3.mouse(this)[0], left:d3.mouse(this)[1]});
+      })
+	  .on('mouseout', function(d){
+		  d3.select(this).attr("stroke-opacity", 0)
+		$("#countryName").html("");
+	  })
+    }
+
+    function getCountryColor(max,d){
+      var tempScale = d3.scale.sqrt().domain([0, max]).range([1,10]);
+      var colorScale = d3.scale.log().range(["#ddd", "#000"]); 
+      return colorScale(tempScale(d));
+    }
+
+    function initializeController(){
+      $('.map1').click(function(){
+		// d3.select(this).attr("fill", "#000");
+        // First clear any marked countries.
+        var marked_countries = svg2.selectAll(".marked");
+        if (marked_countries.length >0){
+          marked_countries.each(function(d){
+            d3.select(this).attr("class","unmarked").attr("fill","#ddd").attr("stroke","#fff");
+          });
+        }
+        id = $(this).attr("id");
+        zipcode = id.split('_')[1];
+        var data = zip_to_country[parseInt(zipcode)];
+		
+        data.forEach(function(d){
+          jurisdiction = d.jurisdiction.split(" ").join("_");
+          if (jurisdiction.length !=0 && jurisdiction !=undefined){
+            var color = getCountryColor(zip_region_counts[zipcode]['max'], zip_region_counts[zipcode]['values'][jurisdiction]);
+            svg2.select("#"+jurisdiction).attr("class","marked").transition().duration(2000).attr("fill", color).attr("stroke",color);
+			$("#currentSelection").html("Companies in "+ zipcode + " are from > ");
+          }
+        });
+
+      })
+    }
+
+
+    });
+
+    </script>
+
+      <a href="http://youarehere.media.mit.edu"><img id="logo" src="logo.jpg"></a>
+      <div id="containers">
+      	<div id="svgContainer1"></div>
+        <div id="svgContainer2"></div>
+      </div>
+	  <div id="title">Companies Registered in Manhattan</div>
+      <div id="countryName"></div>
+	  <div id="currentSelection">Click on Manhattan</div>
+	<div id="footer">
+        This work is part of the <a href="http://youarehere.media.mit.edu">You Are Here</a> project
+        <span class="footer-plus">+</span>
+        <a href="http://socialcomputing.media.mit.edu"> The Social Computing Group </a>
+        <span class="footer-plus">+</span>
+        <a href="http://media.mit.edu"> MIT Media Lab </a>
+        <span class="footer-plus">+</span>
+        <a href="http://mit.edu"> MIT</a>
+        &nbsp
+        <span class="footer-plus">|</span>
+        &nbsp
+        <span id="data-source" class='footer-highlight'> Data Source</span>
+    </div>
+	
+    <div id='data-lightbox'>
+	    <div id='lightbox-close' class="glyphicon glyphicon-remove"></div>
+		This map visualizes foreign corporat entities registered in Manhattan.
+		<br/><br/>
+	    Data comes from  <a href="http://enigma.io/" class="footer-highlight-link">Enigma</a>.
+	</div>
+      </div>
+    </body>
+</html>
+    

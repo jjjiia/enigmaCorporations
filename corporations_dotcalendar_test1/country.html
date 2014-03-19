@@ -1,0 +1,138 @@
+<html>
+<head>
+<script src="jquery.min.js"></script>
+<script src="scripts.js"></script>
+<script src="scripts.js" type="text/javascript" charset="utf-8"></script>
+
+<style type="text/css">
+body{font-family: Arial, sans-serif;font-size:9px;}
+.axis path,.axis line {fill: none;stroke:#b6b6b6;shape-rendering: crispEdges;}
+/*.tick line{fill:none;stroke:none;}*/
+.tick text{fill:#999;}
+g.journal.active{cursor:pointer;}
+text.label{font-size:11px;font-weight:bold;cursor:pointer;}
+text.value{font-size:7px;font-weight:bold;}
+</style>
+</head>
+<body>
+
+<script type="text/javascript">
+function truncate(str, maxLength, suffix) {
+	if(str.length > maxLength) {
+		str = str.substring(0, maxLength + 1); 
+		str = str.substring(0, Math.min(str.length, str.lastIndexOf(" ")));
+		str = str + suffix;
+	}
+	return str;
+}
+
+var margin = {top: 20, right: 200, bottom: 0, left: 20},
+	width = 1000,
+	height = 3050;
+
+var start_year = 1880,
+	end_year = 2014;
+
+var c = d3.scale.ordinal()
+    .domain(d3.range(3)).range(["#1D2E5E","#4674DB","#737070","#328BBF","#23262C","#646698","#3A6A82",
+"#4651A4","#3772BD","#384153","#6A80A6","#1A1D40","#1B3F7D","#6D6EC3","#403D61","#11436F","#7C7294",
+"#153250","#7082BA","#465977","#376DA7","#3D7DA3","#132134","#47464A","#727785","#456692","#58839A","#335287",
+"#3158A1","#515868","#5D6DAD","#4685D8","#234F6A","#626988","#333E6F","#1F6B91","#263143","#5B7BC9","#4E8AB0",
+"#167EB3","#3EC5B9","#546964","#4EFEC2","#138765","#B2EEE6","#82AB96","#2CE9FB","#9BF1C4","#39898A",
+"#50D6A4","#186A57","#85CEB5","#2BA6B1","#C3E9CB","#60F3CD","#6FA8A8","#53C9D0","#87EBF0","#AAB8A6",
+"#57EAD8","#88D1CA","#2C6E73","#C8D5C1","#34B09B","#869883","#6AF7F6","#5B705B","#5A9A89","#6ED9BB","#6E827B",
+"#77B998","#A3EACE","#3A776C","#28FED3","#50ACA7","#36D6B4","#9FC4A8","#42EAE9","#43A351","#53EF2E","#CEE8B3",
+"#5E6A4A","#CAEF69","#4EEEAD","#719E1C","#2FB42F","#849E59","#54EE81","#2E8356","#99EE34","#76CD5E","#3F750E",
+"#3EE556","#9EA177","#50B480","#ACCF7F","#57712F","#82B180","#91E252","#4CCC81","#9DCA3B","#25891C","#A5E7AA",
+"#5FCD1E","#7AC06C","#37C35D","#688F35","#9BBB5B","#30803F","#D6EF99","#77EE98","#638360","#A2EA79","#53AB2A",
+"#6AA73A","#73E65C","#497C48","#34822E"]); 
+
+var x = d3.scale.linear()
+	.range([0, width]);
+
+var xAxis = d3.svg.axis()
+	.scale(x)
+	.orient("top");
+	
+
+var formatYears = d3.format("0000");
+xAxis.tickFormat(formatYears);
+
+var svg = d3.select("body").append("svg")
+	.attr("width", width + margin.left + margin.right)
+	.attr("height", height + margin.top + margin.bottom)
+	.style("margin-left", margin.left + "px")
+	.append("g")
+	.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+
+d3.json("corporations_data2.json", function(data) {
+	x.domain([start_year, end_year]);
+	var xScale = d3.scale.linear()
+		.domain([start_year, end_year])
+		.range([0, width]);
+
+	svg.append("g")
+		.attr("class", "x axis")
+		.attr("transform", "translate(0," + 0 + ")")
+		.call(xAxis);
+
+	for (var j = 0; j < data.length; j++) {
+		var g = svg.append("g").attr("class","journal");
+
+		var circles = g.selectAll("circle")
+			.data(data[j]['articles'])
+			.enter()
+			.append("circle");
+
+		var text = g.selectAll("text")
+			.data(data[j]['articles'])
+			.enter()
+			.append("text");
+
+		var rScale = d3.scale.linear()
+			//.domain([0, d3.max(data[j]['articles'], function(d) { return d[1]; })])
+			.domain([1,200])
+			.range([1, 200]);
+
+		circles
+			.attr("cx", function(d, i) { return xScale(d[0]); })
+			.attr("cy", j*20+20)
+			.attr("r", function(d) { return Math.sqrt(rScale(d[1])/3.14); })
+			.style("fill", function(d) { return c(j); });
+
+		text
+			.attr("y", j*20+25)
+			.attr("x",function(d, i) { return xScale(d[0])-5; })
+			.attr("class","value")
+			.text(function(d){ return d[1]; })
+			.style("fill", function(d) { return c(j); })
+			.style("display","none");
+
+		g.append("text")
+			.attr("y", j*20+25)
+			.attr("x",width+20)
+			.attr("class","label")
+			.text(truncate(data[j]['name'],30,"..."))
+			.style("fill", function(d) { return c(j); })
+			.on("mouseover", mouseover)
+			.on("mouseout", mouseout);
+	};
+
+	function mouseover(p) {
+		var g = d3.select(this).node().parentNode;
+		d3.select(g).selectAll("circle").style("display","none");
+		d3.select(g).selectAll("text.value").style("display","block");
+	}
+
+	function mouseout(p) {
+		var g = d3.select(this).node().parentNode;
+		d3.select(g).selectAll("circle").style("display","block");
+		d3.select(g).selectAll("text.value").style("display","none");
+	}
+});
+
+</script>
+
+</body>
+</html>
