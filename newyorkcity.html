@@ -81,8 +81,8 @@
     queue()
         .defer(d3.json, 'nyc-zip-codes.geojson')
         .defer(d3.json, 'world_filtered.geojson')
-        .defer(d3.json, 'newyorkcity_all_z2r.json')
-        .defer(d3.json, 'newyorkcity_all_r2z.json')
+        .defer(d3.json, 'newyorkcity_z2r.json')
+        .defer(d3.json, 'newyorkcity_r2z.json')
         .await(initializeData);
     });
 
