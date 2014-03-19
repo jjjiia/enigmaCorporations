@@ -1,2 +1,5 @@
 .DS_Store
 enigma_data
+crawler/original_data
+crawler/*.json
+crawler/*.csv
