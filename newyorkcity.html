@@ -8,7 +8,7 @@
     <script src="http://d3js.org/queue.v1.min.js"></script>
     <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css" rel="stylesheet">
 	<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
-    <link rel="stylesheet" type="text/css" href="zipcodes.css"> </style>
+    <link rel="stylesheet" type="text/css" href="foreigncompanies.css"> </style>
     <!-- Google Analytics -->
 </head>
 
@@ -239,7 +239,7 @@
       })
 	  .on("click", function(d){
 		  //console.log(numCompanies(d))
-		 $("#currentSelection").html(numCompanies(d)+" companies from "+ d.properties.name + " can be found here in Manhattan");
+		 $("#currentSelection").html(numCompanies(d)+" companies from "+ d.properties.name + " can be found here in New York City");
 		  d3.selectAll("path").attr("fill", "#eeeeee")
 		  d3.select(this).attr("fill", "#A3E3E0")
         $("#countryName").html(d.properties.name);
@@ -272,7 +272,7 @@
 		$("#countryName").html("");
         if (marked_countries.length >0){
           marked_countries.each(function(d){
-            d3.select(this).attr("class","unmarked").attr("fill","#EEEEEE").transition().duration(2000).attr("stroke","#fff");
+            d3.select(this).attr("class","unmarked").attr("fill","#EEEEEE").transition().duration(1000).attr("stroke","#fff");
           });
         }
         id = $(this).attr("id");
@@ -282,7 +282,7 @@
           jurisdiction = d;
           if (jurisdiction.length !=0 && jurisdiction !=undefined){
             var color = getCountryColor(zip_region_counts[zipcode]['max'], zip_region_counts[zipcode]['values'][jurisdiction]);
-            svg2.select("#"+jurisdiction).attr("class","marked").transition().duration(2000).attr("fill", color).attr("stroke",color);
+            svg2.select("#"+jurisdiction).attr("class","marked").transition().duration(1000).attr("fill", color).attr("stroke",color);
 			   //  $("#currentSelection").html("Companies in "+ zipcode + " are from > ");
           }
         });
@@ -292,7 +292,7 @@
       var marked_zipcodes = svg1.selectAll(".marked");
         if (marked_zipcodes.length >0){
           marked_zipcodes.each(function(d){
-            d3.select(this).attr("class","unmarked").attr("fill","#EEEEEE").transition().duration(2000).attr("stroke","#fff");
+            d3.select(this).attr("class","unmarked").attr("fill","#EEEEEE").transition().duration(1000).attr("stroke","#fff");
           });
         }
       region = $(this).attr("id");
@@ -304,7 +304,7 @@
       } else {
         data['zipcodes'].forEach(function(d){
           var color = getZipcodeColor(region_zip_counts[region]['max'], region_zip_counts[region]['values'][d]);
-          svg1.select("#zip_"+d).attr("class","marked").transition().duration(2000).attr("fill",color).attr("stroke", color);
+          svg1.select("#zip_"+d).attr("class","marked").transition().duration(1000).attr("fill",color).attr("stroke", color);
           //$("#currentSelection").html("<" +" Companies from "+ countryName +" are registered here....");
         })
       }
@@ -318,10 +318,10 @@
       	<div id="svgContainer1"></div>
         <div id="svgContainer2"></div>
       </div>
-	  <div id="title">Manhattan</div>
-	  <div id = "subtitle">Companies Registered - working on whole city</div>
+	  <div id="title">New York City</div>
+	  <div id = "subtitle">Foreign Companies Registered</div>
       <div id="countryName"></div>
-	  <div id="currentSelection">     Click on Maps</div>
+	  <div id="currentSelection">Click on Maps</div>
 	<div id="footer">
         This work is part of the <a href="http://youarehere.media.mit.edu">You Are Here</a> project
         <span class="footer-plus">+</span>
@@ -338,7 +338,7 @@
 	
     <div id='data-lightbox'>
 	    <div id='lightbox-close' class="glyphicon glyphicon-remove"></div>
-		This map visualizes foreign corporat entities registered in Manhattan.
+		This map visualizes foreign corporate entities registered in New York City using coporation registration records.
 		<br/><br/>
 	    Data comes from  <a href="http://enigma.io/" class="footer-highlight-link">Enigma</a>.
 	</div>
